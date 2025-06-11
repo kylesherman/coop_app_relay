@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- REQUIRED -->
+  <key>CFBundleIdentifier</key>
+  <string>com.chickenindustries.CoopTrackingApp</string>
+
+  <key>CFBundleName</key>
+  <string>CoopTrackingApp</string>
+
+  <key>CFBundleDisplayName</key>
+  <string>Coop</string>
+
+  <key>CFBundleExecutable</key>
+  <string>$(EXECUTABLE_NAME)</string>
+
+  <key>CFBundlePackageType</key>
+  <string>APPL</string>
+
+  <key>LSRequiresIPhoneOS</key>
+  <true/>
+
+  <!-- DEEP LINK SCHEME -->
+  <key>CFBundleURLTypes</key>
+  <array>
+    <dict>
+      <key>CFBundleURLName</key>
+      <string>coopapp</string>
+      <key>CFBundleURLSchemes</key>
+      <array>
+        <string>coopapp</string>
+      </array>
+    </dict>
+  </array>
+
+  <!-- SUPABASE CONFIG (You’ll access these via Info.plist in code) -->
+  <key>SUPABASE_URL</key>
+  <string>https://lhycuglgaripgtqcqyhb.supabase.co</string>
+
+  <key>SUPABASE_ANON_KEY</key>
+  <string>eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxoeWN1Z2xnYXJpcGd0cWNxeWhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkzMzA4OTIsImV4cCI6MjA2NDkwNjg5Mn0.2220gSruNDggspYidPrvJr0CKnb7qJ-YR0DHpyE1L8Y</string>
+
+</dict>
+</plist>

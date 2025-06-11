@@ -1,0 +1,414 @@
+API ENDPOINTS
+--
+
+
+📦 Snapshot Upload
+	•	POST /api/snapshots
+Uploads a snapshot and metadata after it has been pushed to Supabase Storage.
+Request: { relay_id, image_filename }
+
+⸻
+
+🔁 Relay Pairing & Status
+	•	GET /api/relay/pairing?code={pairing_code}
+Checks if a relay has been paired using a given pairing code.
+Response: { status, relay_id, paired_at }
+	•	POST /api/relay/status
+Used by the relay to periodically ping its health.
+Request: { relay_id, seen_at (optional) }
+Updates last_seen_at.
+	•	GET /api/relay/status/read?relay_id={relay_id}
+Returns live status info including last_seen_at, paired_at, interval, and latest_snapshot.
+
+⸻
+
+⚙️ Relay Configuration
+	•	GET /api/relay/config?relay_id={relay_id}
+Relay polls this to get its current interval and RTSP URL.
+Response: { interval, rtsp_url }
+	•	POST /api/relay/config/update
+Used by the mobile app to update a relay’s config settings.
+Request: { relay_id, interval, rtsp_url }
+
+⸻
+
+🖼 Snapshot History
+	•	GET /api/relay/{relay_id}/snapshots?limit=20
+Returns the latest snapshot metadata for a specific relay, paginated.
+Query params: limit, optional
+
+
+What we Used in Relay
+--
+
+POST https://coop-app-backend.fly.dev/api/snapshots
+Content Type: application/json
+Body: {
+  "relay_id": "8f347b3b-67fd-4f4f-8656-ccf04d60d90f",
+  "image_filename": "8f347b3b-67fd-4f4f-8656-ccf04d60d90f/2025-06-08-145509.jpg"
+}
+
+Returns: 
+{
+    "snapshot_id": "76d0dce6-6725-44da-be83-2d46cea27a40",
+    "image_url": "https://lhycuglgaripgtqcqyhb.supabase.co/storage/v1/object/public/snapshots/8f347b3b-67fd-4f4f-8656-ccf04d60d90f/2025-06-08-145509.jpg"
+}
+
+
+GET https://coop-app-backend.fly.dev/api/relay/config?relay_id=8f347b3b-67fd-4f4f-8656-ccf04d60d90f
+
+Params: relay_id 8f347b3b-67fd-4f4f-8656-ccf04d60d90f
+
+Return: {
+    "interval": "1m",
+    "rtsp_url": "rtsp://192.168.1.16:7447/9vlEEXDJCZZKtup1"
+}
+
+POST https://coop-app-backend.fly.dev/api/relay/config/update
+
+Headers: Content-Type: application/json
+
+Body: {
+  "relay_id": "8f347b3b-67fd-4f4f-8656-ccf04d60d90f",
+  "interval": "1m",
+  "rtsp_url": "rtsp://192.168.1.16:7447/9vlEEXDJCZZKtup1"
+}
+
+Return: 404?
+
+GET https://coop-app-backend.fly.dev/api/relay/pairing?code=CASCAD123
+
+Params: code:CASCAD123
+
+Return: 404
+
+
+POST https://coop-app-backend.fly.dev/api/relay/status
+
+Headers: Content-Type: application/json
+
+Body: {
+  "relay_id": "8f347b3b-67fd-4f4f-8656-ccf04d60d90f"
+}
+
+GET https://coop-app-backend.fly.dev/api/relay/status/read?relay_id=8f347b3b-67fd-4f4f-8656-ccf04d60d90f
+
+Params: relay_id:8f347b3b-67fd-4f4f-8656-ccf04d60d90f
+
+Return: 404
+
+GET https://coop-app-backend.fly.dev/api/relay/snapshots?relay_id=8f347b3b-67fd-4f4f-8656-ccf04d60d90f&limit=10
+
+Params: relay_id:8f347b3b-67fd-4f4f-8656-ccf04d60d90f
+limit:10
+
+RETURN: [
+    {
+        "created_at": "2025-06-09T00:05:29.122951+00:00",
+        "id": "960c5aa6-63f0-4db0-8fbc-8330142732f6",
+        "image_path": "8f347b3b-67fd-4f4f-8656-ccf04d60d90f/2025-06-09-000528.jpg"
+    },
+    {
+        "created_at": "2025-06-09T00:04:28.879894+00:00",
+        "id": "acb676d2-7fcf-46e6-842f-14461ae8a4b8",
+        "image_path": "8f347b3b-67fd-4f4f-8656-ccf04d60d90f/2025-06-09-000428.jpg"
+    },
+    {
+        "created_at": "2025-06-09T00:03:29.400029+00:00",
+        "id": "dd369594-eab0-4043-adff-7b4e86587789",
+        "image_path": "8f347b3b-67fd-4f4f-8656-ccf04d60d90f/2025-06-09-000328.jpg"
+    },
+    {
+        "created_at": "2025-06-09T00:02:29.149208+00:00",
+        "id": "1452cc47-c47e-4f9d-9189-4b34b5e0a4f9",
+        "image_path": "8f347b3b-67fd-4f4f-8656-ccf04d60d90f/2025-06-09-000228.jpg"
+    },
+    {
+        "created_at": "2025-06-09T00:01:28.695766+00:00",
+        "id": "3b3de37e-8b19-4515-9d8d-2d2babe0b859",
+        "image_path": "8f347b3b-67fd-4f4f-8656-ccf04d60d90f/2025-06-09-000128.jpg"
+    },
+    {
+        "created_at": "2025-06-09T00:00:29.350488+00:00",
+        "id": "cacc6535-87c6-4e9e-b253-f2f55ce49756",
+        "image_path": "8f347b3b-67fd-4f4f-8656-ccf04d60d90f/2025-06-09-000028.jpg"
+    },
+    {
+        "created_at": "2025-06-08T23:59:28.992746+00:00",
+        "id": "c1856b1e-6660-414a-8c0b-9c7e1f6d5bff",
+        "image_path": "8f347b3b-67fd-4f4f-8656-ccf04d60d90f/2025-06-08-235928.jpg"
+    },
+    {
+        "created_at": "2025-06-08T23:58:28.588876+00:00",
+        "id": "01cc86c1-60ef-4343-9766-e739da15f9ec",
+        "image_path": "8f347b3b-67fd-4f4f-8656-ccf04d60d90f/2025-06-08-235828.jpg"
+    },
+    {
+        "created_at": "2025-06-08T23:57:29.145693+00:00",
+        "id": "aa96c132-40e6-4c87-ae83-cc9726ef0371",
+        "image_path": "8f347b3b-67fd-4f4f-8656-ccf04d60d90f/2025-06-08-235728.jpg"
+    },
+    {
+        "created_at": "2025-06-08T23:56:28.874555+00:00",
+        "id": "7cdf305a-2eb2-48e6-8ad0-cacacb75cffb",
+        "image_path": "8f347b3b-67fd-4f4f-8656-ccf04d60d90f/2025-06-08-235628.jpg"
+    }
+]
+
+POST https://coop-app-backend.fly.dev/api/relay/config/update
+
+Headers: Content-Type: application/json
+
+Body: {
+  "relay_id": "8f347b3b-67fd-4f4f-8656-ccf04d60d90f",
+  "interval": "1m",
+  "rtsp_url": "rtsp://192.168.1.16:7447/9vlEEXDJCZZKtup1"
+}
+
+Return: 404
+
+GET https://coop-app-backend.fly.dev/api/relay/config?relay_id=8f347b3b-67fd-4f4f-8656-ccf04d60d90f
+
+Params: relay_id:8f347b3b-67fd-4f4f-8656-ccf04d60d90f
+
+RETURN: {
+    "interval": "1m",
+    "rtsp_url": "rtsp://192.168.1.16:7447/9vlEEXDJCZZKtup1"
+}
+
+PATCH https://lhycuglgaripgtqcqyhb.supabase.co/rest/v1/relays?id=eq.8f347b3b-67fd-4f4f-8656-ccf04d60d90f
+
+Params: id:eq.8f347b3b-67fd-4f4f-8656-ccf04d60d90f
+
+Headers: apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxoeWN1Z2xnYXJpcGd0cWNxeWhiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0OTMzMDg5MiwiZXhwIjoyMDY0OTA2ODkyfQ.8e081iBT4vrn47H8yITSkdCoSBeNRJNJnUxsPczIj0o
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxoeWN1Z2xnYXJpcGd0cWNxeWhiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0OTMzMDg5MiwiZXhwIjoyMDY0OTA2ODkyfQ.8e081iBT4vrn47H8yITSkdCoSBeNRJNJnUxsPczIj0o
+Content-Type: application/json
+Prefer: return=representation
+
+Body: {
+  "interval": "1m",
+  "rtsp_url": "rtsp://192.168.1.16:7447/9vlEEXDJCZZKtup1"
+}
+
+
+POST https://coop-app-backend.fly.dev/api/onboarding/profile
+
+AUTH: USer BEarer TOken
+
+HEaders: Content-Type: application/json
+
+Body:
+
+{
+  "first_name": "Kyle",
+  "last_name": "Sherman",
+  "username": "sherm"
+}
+
+Return: {
+    "message": "User already exists"
+}
+
+
+POST https://coop-app-backend.fly.dev/api/onboarding/coop
+Auth Bearer Token
+Headers: Content-Type: application/json
+Body: {"mode": "create_new_coop", "value": "My Test Coop"}
+
+Response: {
+    "message": "Coop created and joined",
+    "coop_id": "24bde093-271f-4ac6-af0e-72ef71dd4398",
+    "invite_code": "e56ce080"
+}
+
+
+The backend should now be ready for testing this new endpoint. I recommend you:
+
+Ensure your Go backend server is running with the latest changes.
+Use a tool like Postman or curl to test the following scenarios:
+	Create Coop (Success):
+		POST /api/onboarding/coop
+		Valid JWT in Authorization: Bearer <token> header.
+		Body: {"mode": "create_new_coop", "value": "My Test Coop"}
+		Expected: 201 Created with message, coop_id, invite_code.
+
+	Create Coop (Name Conflict):
+		Attempt to create another coop with the same name.
+		Expected: 409 Conflict with {"error": "Coop name already exists"}.
+
+	Join Coop (Success):
+		POST /api/onboarding/coop
+		Valid JWT for a different user than the coop creator.
+		Body: {"mode": "join_a_flock", "value": "<invite_code_from_creation>"}
+		Expected: 200 OK with message, coop_id.
+
+	Join Coop (Invalid Invite Code):
+		Body: {"mode": "join_a_flock", "value": "INVALIDCODE"}
+		Expected: 404 Not Found with {"error": "Invite code not found"}.
+
+	Join Coop (Already a Member):
+		The same user attempts to join the same coop again.
+		Expected: 200 OK with {"message": "Already a member", "coop_id": "..."}.
+
+	Invalid/Missing JWT:
+		Expected: 401 Unauthorized.
+
+	Missing mode or value in request body:
+		Expected: 400 Bad Request.
+
+
+
+		
+		GET https://coop-app-backend.fly.dev/api/relay/status/read?relay_id=8f347b3b-67fd-4f4f-8656-ccf04d60d90f
+
+JSON RETURN
+
+{
+    "interval": "1m",
+    "last_seen_at": "2025-06-09T01:13:51.072534+00:00",
+    "latest_snapshot": "8f347b3b-67fd-4f4f-8656-ccf04d60d90f/2025-06-09-011355.jpg",
+    "paired_at": "2025-06-08T06:48:08.91671+00:00",
+    "relay_id": "8f347b3b-67fd-4f4f-8656-ccf04d60d90f"
+}
+
+
+Created internal/api/onboarding_status_get.go:
+
+This file now houses the GetOnboardingStatusHandler.
+
+The handler validates the Supabase JWT from the Authorization header
+.
+It then queries the Supabase /rest/v1/users table to check if a profile exists for the user_id and retrieves the username if available.
+Next, it queries the /rest/v1/coop_members table to check if the user is part of any coop, retrieving the most recent coop_id if they are.
+
+Finally, it returns a JSON response like:
+json
+
+{
+  "user_id": "<uuid>",
+  "has_profile": true, // or false
+  "has_coop": true,    // or false
+  "username": "sherm", // optional
+  "coop_id": "abc-123" // optional
+}
+
+
+THIS IS FOR THE RELAY TO GET A UNIQUE PAIRING CDDE
+
+The new unauthenticated endpoint POST /api/relay/request_pairing_code has been implemented.
+
+Here's a summary of the changes:
+
+Updated internal/api/relay_pairing.go:
+Added the RequestRelayPairingCodeHandler function.
+This handler generates a unique 8-digit numeric pairing code.
+It attempts to insert this code along with status: "pending" into the Supabase relays table via the REST API.
+It includes a retry mechanism (up to 5 attempts) to handle potential 409 Conflict errors if a generated pairing code already exists.
+On successful insertion (201 Created), it returns a JSON response with the new relay's relay_id, pairing_code, and status.
+Necessary imports (bytes, fmt, io, math/rand, time) were added, and lint errors related to io.ReadAll and variable names were fixed.
+Updated cmd/server/main.go:
+
+The route POST /api/relay/request_pairing_code has been added to the Chi router under the /api/relay group, mapping it to api.RequestRelayPairingCodeHandler.
+A commented-out route for GET /api/relay/pairing (handled by GetRelayPairingStatusHandler) was also added as a reminder, since that handler exists but wasn't previously routed.
+This new endpoint should allow Coop Relay instances to request a pairing code for setup.
+
+What would you like to do next? We could commit these changes, or work on activating the GET /api/relay/pairing endpoint if needed.
+
+THIS IS FOR THE USER TO CLAIM A RELAY USING THAT Code
+
+The authenticated endpoint POST /api/relay/claim has now been implemented.
+
+Here's a summary of the work done:
+
+Created ClaimRelayHandler in internal/api/relay_pairing.go:
+
+This new handler implements the logic for POST /api/relay/claim.
+It performs JWT authentication to extract the user_id.
+It parses the pairing_code from the JSON request body.
+It queries Supabase to find the coop_id associated with the authenticated user_id.
+It then attempts to update the relay in Supabase by matching the pairing_code and status='pending'. If found, it sets status='claimed', associates the coop_id, and sets paired_at = now().
+On success, it returns a 200 OK with {"relay_id": "...", "status": "claimed"}.
+Appropriate error handling is in place for missing/invalid JWT, missing pairing_code, user not having a coop, relay not found (404), and other Supabase/server errors.
+Helper structs ClaimRelayRequest, ClaimRelayResponse, and CoopMemberRecord were defined for request/response marshalling and Supabase data decoding.
+Missing imports for strings and github.com/golang-jwt/jwt/v5 were added to resolve lint errors.
+Updated cmd/server/main.go:
+The route POST /api/relay/claim has been added to the Chi router, under the /api/relay group, and is mapped to the new api.ClaimRelayHandler.
+This endpoint should now allow authenticated mobile app users to claim a pending relay using its pairing code.
+
+
+Step	Endpoint	Status
+🐣 Generate pairing code	POST /api/relay/request_pairing_code	✅ Implemented
+🤝 Claim relay	POST /api/relay/claim	✅ Implemented
+
+
+THIS END POINT IS FOR A NEW RELAY TO FETCH SETTINGS
+
+The import for bytes has been removed and fmt has been added in internal/api/relay_config.go. This should resolve two of the lint errors.
+
+The GetRelayConfigHandler in internal/api/relay_config.go is now updated to:
+
+Accept either relay_id or pairing_code as a query parameter.
+If relay_id is provided:
+It fetches the relay by ID.
+If claimed and has a coop_id, it returns the interval and rtsp_url from the database.
+Otherwise, it returns a default config ({"interval": "30s", "rtsp_url": null}).
+Responses are 200 OK.
+If pairing_code is provided (and relay_id is not):
+It fetches the relay by pairing_code.
+If not found, returns 404 Not Found.
+If found, it returns relay_id and status.
+If status is "claimed", it also returns coop_id (if present), rtsp_url (if present), and interval (defaulting to "10m" if the database value is null).
+Responses are 200 OK.
+If neither parameter is provided, it returns 400 Bad Request.
+The route GET /api/relay/config in cmd/server/main.go already points to api.GetRelayConfigHandler, so no changes are needed there. The previous lint error undefined: api.GetRelayConfigHandler was likely transient and should be resolved now that the issues within relay_config.go are fixed.
+
+This completes the implementation of the unauthenticated endpoint **GET /api/relay/config?pairing_code=XXXXXX** by extending the existing GetRelayConfigHandler.
+
+What would you like to do next?
+
+
+
+
+RELAY PAIRING RELAY_ID PERSISTANCE
+
+Okay, I understand the task. To preserve the relay_id across resets, I will modify the POST /api/relay/request_pairing_code endpoint to handle both new relays and existing relays that are being reset.
+
+Here's my plan:
+
+Update the Request Body: The endpoint will now accept an optional relay_id in the JSON body. If relay_id is present, it signifies a reset for an existing relay. If it's absent, it's a request from a new relay.
+Modify the Handler Logic:
+If relay_id is provided: I will perform a PATCH request to the Supabase backend. This will update the existing relay record by generating a new pairing_code, setting its status to "pending", and clearing the coop_id.
+If relay_id is not provided: I will keep the existing logic, which performs a POST request to create a new relay record with a new pairing_code and status: "pending".
+Ensure Idempotency: The logic will include retry mechanisms for pairing_code conflicts in both scenarios.
+This change ensures a physical relay device maintains its unique identity (relay_id) and its associated history, even when it's reset and re-paired.
+
+I will now modify 
+internal/api/relay_pairing.go
+ to implement this.
+
+I have successfully updated the 
+RequestRelayPairingCodeHandler
+ to preserve the relay_id when a relay is reset.
+
+Here is a summary of the changes:
+
+Endpoint: POST /api/relay/request_pairing_code
+Request Body: Now accepts an optional relay_id.
+json
+{
+  "relay_id": "your-existing-relay-id" // Optional
+}
+How it Works
+Existing Relay (Reset):
+If you send a request with an existing relay_id, the backend will update (PATCH) the corresponding relay record.
+It generates a new pairing_code, resets the status to "pending", and sets the coop_id to null.
+The original relay_id is preserved, maintaining all historical data associations.
+New Relay:
+If you send a request with no relay_id (or an empty body), the backend will create (POST) a new relay record.
+This generates a new relay_id and pairing_code.
+Client-Side Implementation
+This backend change now supports the client-side logic you described. Your Relay application should be updated as follows:
+
+On First Launch: The app should call POST /api/relay/request_pairing_code with an empty body. It should then save the returned relay_id to a local configuration file (e.g., ~/.coop_relay/config.json).
+On "Reset Pairing": The app must read the relay_id from its local config and call POST /api/relay/request_pairing_code with the relay_id in the body. This will reset the pairing without losing the device's identity.
+This completes the requested changes on the backend. Let me know what you'd like to work on next.

@@ -1,0 +1,107 @@
+# OSX
+.DS_Store
+
+# Xcode
+build/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata
+*.xccheckout
+*.moved-aside
+DerivedData
+*.hmap
+*.ipa
+*.xcuserstate
+ios/.xcode.env.local
+
+# Android/IntelliJ
+build/
+.idea
+.gradle
+local.properties
+*.iml
+
+# node.js
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# fastlane
+**/fastlane/report.xml
+**/fastlane/Preview.html
+**/fastlane/screenshots
+**/fastlane/test_output
+
+# Bundle artifact
+*.jsbundle
+
+# Expo
+.expo/
+dist/
+dist-ssr/
+web-build/
+
+# Environment variables
+.env
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Xcode
+*.xcodeproj/*
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcsharedata/
+!*.xcodeproj/project.xcworkspace/contents.xcworkspacedata
+
+# Android/IntelliJ
+**/android/**.keystore
+**/android/gradlew
+**/android/gradle/wrapper/gradle-wrapper.properties
+**/android/local.properties
+**/android/captures/
+**/android/gradlew.bat
+**/android/gradle/wrapper/gradle-wrapper.jar
+**/android/gradle.properties
+**/android/*.iml
+**/android/app/build/
+**/android/app/debug/
+**/android/app/release/
+**/android/build/
+**/android/local.properties
+**/android/*.hprof
+**/android/*.hprof.*
+**/android/captures/
+**/android/keystores/
+**/android/.gradle/
+**/android/capture/
+**/android/release/
+
+# iOS
+**/ios/build/
+**/ios/Pods/
+**/ios/Podfile.lock
+**/ios/*.xcworkspace/
+**/ios/*.xcodeproj/
+**/ios/Podfile
+**/ios/Podfile.lock
+**/ios/Podfile.*.lock
+**/ios/Podfile.*.bak
+**/ios/Podfile.*.backup
+**/ios/Podfile.*.orig
+**/ios/Podfile.*.rej
+**/ios/Podfile.*.swp
+**/ios/Podfile.*.swo
+**/ios/Podfile.*.swn
+**/ios/Podfile.*.swm
+
+# Metro
+.metro-health-check*
