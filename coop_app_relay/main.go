@@ -45,7 +45,7 @@ func main() {
 	coopBackendURL = strings.TrimSuffix(coopBackendURL, "/")
 
 	// 3. Generate object key
-	timestamp := time.Now().UTC().Format("2006-01-02-150405")
+	timestamp := time.Now().UTC().Format("2006-01-02-15-04-05")
 	objectKey := fmt.Sprintf("%s/%s.jpg", *relayID, timestamp)
 	log.Printf("Generated Supabase object key: %s", objectKey)
 
@@ -122,5 +122,8 @@ func main() {
 	}
 
 	log.Printf("Successfully notified backend. Status: %s, Response: %s", notifyResp.Status, string(notifyBodyBytes))
+	
+	// Output the final image path for the React app to parse
+	fmt.Printf("UPLOADED_IMAGE_PATH:%s\n", objectKey)
 	log.Println("Process completed successfully.")
 }

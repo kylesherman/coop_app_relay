@@ -289,7 +289,7 @@ function App() {
     console.log('[Uploader Command]', command);
       statusCallback(`Executing: ${UPLOADER_COMMAND.split('/').pop()}...`);
       
-      await new Promise((resolve, reject) => {
+      const uploadOutput = await new Promise((resolve, reject) => {
         exec(command, { 
           env: {
             // Explicitly pass only necessary vars, ensure they are defined
@@ -308,6 +308,39 @@ function App() {
         });
       });
       statusCallback(`Snapshot uploaded successfully at ${new Date().toLocaleTimeString()}`);
+      
+      // Send snapshot-created notification to backend
+      try {
+        // Extract image path from uploader output
+        let imagePath = null;
+        const pathMatch = uploadOutput.match(/UPLOADED_IMAGE_PATH:(.+)/);
+        if (pathMatch) {
+          imagePath = pathMatch[1].trim();
+        } else {
+          // Fallback to generating timestamp (should not happen with updated uploader)
+          const timestamp = new Date().toISOString()
+            .slice(0, 19)             // "2025-06-12T00:07:16"
+            .replace(/[:T]/g, '-');   // "2025-06-12-00-07-16"
+          imagePath = `${currentRelayId}/${timestamp}.jpg`;
+          console.warn('[Snapshot Created] Could not parse image path from uploader, using fallback:', imagePath);
+        }
+        
+        console.log('[Snapshot Created] Final image_path:', imagePath);
+        const notificationResponse = await fetch('https://coop-app-backend.fly.dev/api/internal/snapshot-created', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image_path: imagePath }),
+        });
+        
+        if (notificationResponse.ok) {
+          console.log('[Snapshot Created] Notification sent successfully');
+        } else {
+          console.log('[Snapshot Created] Notification failed:', notificationResponse.status, notificationResponse.statusText);
+        }
+      } catch (error) {
+        console.log('[Snapshot Created] Notification error (non-blocking):', error.message);
+      }
+      
       // Immediately refresh relay status in UI
       const freshRelayId = localStorage.getItem(RELAY_ID_KEY) || relayId;
       const freshApiBaseUrl = apiBaseUrl;
@@ -689,6 +722,3 @@ function App() {
 // }
 
 export default App;
-
-
-
