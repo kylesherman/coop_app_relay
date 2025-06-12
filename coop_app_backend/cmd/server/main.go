@@ -21,6 +21,9 @@ func main() {
 
 	r.Post("/api/snapshots", api.PostSnapshotHandler)
 
+	r.Post("/api/egg-detections/run", api.PostEggDetectionsRunHandler)
+	r.Post("/api/internal/snapshot-created", api.PostSnapshotCreatedHandler)
+
 	r.Route("/api/relay", func(r chi.Router) {
 		r.Get("/config", api.GetRelayConfigHandler)       // GET /api/relay/config?relay_id=xxx
 		r.Post("/config", api.PostRelayConfigHandler)    // POST /api/relay/config

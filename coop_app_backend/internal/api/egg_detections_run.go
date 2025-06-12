@@ -1,6 +1,7 @@
 package api
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -8,6 +9,9 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
+	
+	_ "github.com/lib/pq"
 )
 
 // PostEggDetectionsRunHandler handles POST /api/egg-detections/run with GPT-4o Vision integration
@@ -177,42 +181,80 @@ DO NOT say anything else. Do not explain. Do not apologize.`
 
 	// 5. Fetch most recent egg_detections for this coop_id before this snapshot
 	var previousEggCount int
+	var foundPriorDetection bool
 	{
-		query := fmt.Sprintf("%s/rest/v1/egg_detections?coop_id=eq.%s&detected_at=lt.%s&order=detected_at.desc&limit=1", supabaseURL, snapshot.CoopID, snapshot.CreatedAt)
-		reqPrev, err := http.NewRequest("GET", query, nil)
+		// Connect to Supabase PostgreSQL database
+		// Supabase connection string format: postgres://postgres:[password]@[host]:5432/postgres
+		supabaseDBURL := os.Getenv("SUPABASE_DB_URL")
+		if supabaseDBURL == "" {
+			log.Printf("[egg-detection] SUPABASE_DB_URL not set, falling back to REST API approach")
+			// Fallback to previous REST approach would go here, but for now we'll error
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{"error": "Database connection not configured"}`))
+			return
+		}
+		
+		db, err := sql.Open("postgres", supabaseDBURL)
+		if err != nil {
+			log.Printf("[egg-detection] Failed to connect to database: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{"error": "Database connection failed"}`))
+			return
+		}
+		defer db.Close()
+
+		// Direct SQL query with JOIN to get most recent prior detection
+		sqlQuery := `
+			SELECT ed.egg_count
+			FROM egg_detections ed
+			JOIN snapshots s ON ed.snapshot_id = s.id
+			WHERE s.coop_id = $1
+			  AND s.created_at < $2
+			ORDER BY s.created_at DESC
+			LIMIT 1;
+		`
+		
+		log.Printf("[egg-detection] Querying for prior detection: coop_id=%s, before=%s", snapshot.CoopID, snapshot.CreatedAt)
+		
+		var priorEggCount int
+		err = db.QueryRow(sqlQuery, snapshot.CoopID, snapshot.CreatedAt).Scan(&priorEggCount)
 		if err == nil {
-			reqPrev.Header.Set("Authorization", "Bearer "+tokenString)
-			reqPrev.Header.Set("apikey", os.Getenv("SUPABASE_ANON_KEY"))
-			reqPrev.Header.Set("Accept", "application/json")
-			respPrev, err := client.Do(reqPrev)
-			if err == nil && respPrev.StatusCode == http.StatusOK {
-				bodyPrev, _ := io.ReadAll(respPrev.Body)
-				var prevs []struct{ EggCount int `json:"egg_count"` }
-				if err := json.Unmarshal(bodyPrev, &prevs); err == nil && len(prevs) > 0 {
-					previousEggCount = prevs[0].EggCount
-				}
-			}
-			if respPrev != nil {
-				respPrev.Body.Close()
-			}
+			previousEggCount = priorEggCount
+			foundPriorDetection = true
+			log.Printf("[egg-detection] Found prior detection: egg_count=%d", previousEggCount)
+		} else if err == sql.ErrNoRows {
+			log.Printf("[egg-detection] No prior detection records found")
+		} else {
+			log.Printf("[egg-detection] Database query error: %v", err)
 		}
 	}
 	if previousEggCount < 0 {
 		previousEggCount = 0
 	}
-	newlyDetected := aiResp.EggCount - previousEggCount
-	if newlyDetected < 0 {
-		newlyDetected = 0
+	
+	// Calculate newly_detected using max(currentEggCount - previousEggCount, 0)
+	var newlyDetected int
+	if foundPriorDetection {
+		newlyDetected = aiResp.EggCount - previousEggCount
+		if newlyDetected < 0 {
+			newlyDetected = 0
+		}
+	} else {
+		newlyDetected = aiResp.EggCount
 	}
-
+	
+	// Log the comparison results with simplified format
+	log.Printf("[egg-detection] Coop %s: last=%d → current=%d → new=%d", snapshot.CoopID, previousEggCount, aiResp.EggCount, newlyDetected)
+	
 	// 6. Insert new row into egg_detections
+	detectedAt := time.Now().UTC()
 	insertBody := map[string]interface{}{
 		"snapshot_id":     snapshot.ID,
 		"egg_count":       aiResp.EggCount,
 		"confidence":      aiResp.Confidence,
 		"newly_detected":  newlyDetected,
 		"model_used":      "gpt-4o",
-		"detected_at":     nil, // let DB default to now()
+		"detected_at":     detectedAt.Format(time.RFC3339Nano),
 	}
 	insertJSON, _ := json.Marshal(insertBody)
 	insertURL := fmt.Sprintf("%s/rest/v1/egg_detections?select=snapshot_id,egg_count,confidence,newly_detected,model_used,detected_at", supabaseURL)
@@ -228,42 +270,32 @@ DO NOT say anything else. Do not explain. Do not apologize.`
 	insertReq.Header.Set("Prefer", "return=representation")
 	insertResp, err := client.Do(insertReq)
 	if err != nil {
-		log.Printf("Failed to insert egg detection: %v", err)
+		log.Printf("Egg detection insert failed: %v", err)
 		w.WriteHeader(http.StatusBadGateway)
-		w.Write([]byte(`{"error": "Insert error", "details": "Could not reach Supabase"}`))
+		w.Write([]byte(`{"error": "Failed to insert detection"}`))
 		return
 	}
 	defer insertResp.Body.Close()
+
 	if insertResp.StatusCode != http.StatusCreated && insertResp.StatusCode != http.StatusOK {
-		log.Printf("Failed to insert egg detection, status: %v", insertResp.StatusCode)
+		body, _ := io.ReadAll(insertResp.Body)
+		log.Printf("Egg detection insert failed: %s", string(body))
 		w.WriteHeader(http.StatusBadGateway)
-		w.Write([]byte(`{"error": "Insert error", "details": "Supabase insert failed"}`))
+		w.Write([]byte(`{"error": "Failed to insert detection"}`))
 		return
 	}
-	bodyInsert, _ := io.ReadAll(insertResp.Body)
-	var inserted []struct {
-		SnapshotID    string  `json:"snapshot_id"`
-		EggCount      int     `json:"egg_count"`
-		Confidence    float64 `json:"confidence"`
-		NewlyDetected int     `json:"newly_detected"`
-		ModelUsed     string  `json:"model_used"`
-		DetectedAt    string  `json:"detected_at"`
-	}
-	if err := json.Unmarshal(bodyInsert, &inserted); err != nil || len(inserted) == 0 {
-		log.Printf("Failed to parse Supabase insert response: %v", err)
-		w.WriteHeader(http.StatusBadGateway)
-		w.Write([]byte(`{"error": "Insert error", "details": "Could not parse Supabase response"}`))
-		return
-	}
-	result := inserted[0]
-	resp := map[string]interface{}{
-		"snapshot_id":    result.SnapshotID,
+
+	log.Printf("[egg-detection] Inserted detection with detected_at=%s", detectedAt.Format(time.RFC3339Nano))
+
+	// 7. Respond with detection result
+	w.Header().Set("Content-Type", "application/json")
+	result := map[string]interface{}{
+		"snapshot_id":    snapshot.ID,
 		"egg_count":      aiResp.EggCount,
 		"confidence":     aiResp.Confidence,
-		"newly_detected": result.NewlyDetected,
-		"model_used":     result.ModelUsed,
-		"detected_at":    result.DetectedAt,
+		"newly_detected": newlyDetected,
+		"model_used":     "gpt-4o",
+		"detected_at":    detectedAt.Format(time.RFC3339Nano),
 	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	json.NewEncoder(w).Encode(result)
 }
